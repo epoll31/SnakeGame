@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29123.88
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnakeGame", "SnakeGame\SnakeGame.csproj", "{9AB97CE0-7929-48F9-B473-505E81887ACD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9AB97CE0-7929-48F9-B473-505E81887ACD}.Debug|x86.ActiveCfg = Debug|x86
+		{9AB97CE0-7929-48F9-B473-505E81887ACD}.Debug|x86.Build.0 = Debug|x86
+		{9AB97CE0-7929-48F9-B473-505E81887ACD}.Release|x86.ActiveCfg = Release|x86
+		{9AB97CE0-7929-48F9-B473-505E81887ACD}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0F81711E-EE80-4A38-99EE-565BC79BE609}
+	EndGlobalSection
+EndGlobal
