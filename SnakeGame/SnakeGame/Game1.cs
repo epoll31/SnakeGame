@@ -1,16 +1,23 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace SnakeGame
 {
+    public enum GameState
+    {
+        Playing = 0,
+        GameOver = 1,
+        Paused = 2
+    }
+
     public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
         Snake snake;
-        Food food;
 
         KeyboardState keyboardState;
         KeyboardState lastKeyboardState;
@@ -19,12 +26,13 @@ namespace SnakeGame
         const int numberOfGridBlocksHigh = 30;
         const int screenWidth = 1500;
         const int screenHeight = 750;
-        const int snakePartSize = screenWidth / numberOfGridBlocksWide;
         const int padding = 1;
-        int score = 0;
+        const int snakePartSize = (screenWidth - padding * numberOfGridBlocksWide) / numberOfGridBlocksWide;
 
         Texture2D BlockImage;
         SpriteFont MainFont;
+
+        GameState currentState = GameState.Playing;
 
         public Game1()
         {
@@ -48,8 +56,7 @@ namespace SnakeGame
             BlockImage = Sprite.CreateSquareTexture(GraphicsDevice, snakePartSize, Color.White);
             MainFont = Content.Load<SpriteFont>("MainFont");
 
-            snake = new Snake(BlockImage, new Vector2((snakePartSize + padding) * 5), 200, 100, Direction.Right, Color.Black, padding);
-            food = new Food(BlockImage, Color.Red, numberOfGridBlocksWide, numberOfGridBlocksHigh, padding);
+            snake = new Snake(BlockImage, new Vector2((snakePartSize + padding) * 5), 200, 100, Direction.Right, Color.Black, padding, numberOfGridBlocksWide, numberOfGridBlocksHigh);
         }
 
         protected override void Update(GameTime gameTime)
@@ -58,32 +65,51 @@ namespace SnakeGame
                 Exit();
             keyboardState = Keyboard.GetState();
 
-            snake.Update(gameTime);
+            if (currentState == GameState.Playing)
+            {
+                if (!snake.Update(gameTime))
+                {
+                    currentState = GameState.GameOver;
+                }
 
-            if (snake.Head.Intersects(food))
+                if (IsKeyPressed(Keys.W) || IsKeyPressed(Keys.Up))
+                {
+                    snake.SetDirection(Direction.Up, true);
+                }
+                if (IsKeyPressed(Keys.D) || IsKeyPressed(Keys.Right))
+                {
+                    snake.SetDirection(Direction.Right, true);
+                }
+                if (IsKeyPressed(Keys.S) || IsKeyPressed(Keys.Down))
+                {
+                    snake.SetDirection(Direction.Down, true);
+                }
+                if (IsKeyPressed(Keys.A) || IsKeyPressed(Keys.Left))
+                {
+                    snake.SetDirection(Direction.Left, true);
+                }
+                if (IsKeyPressed(Keys.Space))
+                {
+                    currentState = GameState.Paused;
+                }
+            }
+            else if (currentState == GameState.Paused)
             {
-                score += 25;
-                snake.ChangeSpeed(-5);
-                food.SetRandomPosition();
-                snake.AddParts(3);
+                if (IsKeyPressed(Keys.Space))
+                {
+                    currentState = GameState.Playing;
+                }
+            }
+            else if (currentState == GameState.GameOver)
+            {
+                if (IsKeyPressed(Keys.Space))
+                {
+                    snake.Reset();
+                    //save data
+                    currentState = GameState.Playing;
+                }
             }
 
-            if (IsKeyPressed(Keys.W) || IsKeyPressed(Keys.Up))
-            {
-                snake.SetDirection(Direction.Up, true);
-            }
-            if (IsKeyPressed(Keys.D) || IsKeyPressed(Keys.Right))
-            {
-                snake.SetDirection(Direction.Right, true);
-            }
-            if (IsKeyPressed(Keys.S) || IsKeyPressed(Keys.Down))
-            {
-                snake.SetDirection(Direction.Down, true);
-            }
-            if (IsKeyPressed(Keys.A) || IsKeyPressed(Keys.Left))
-            {
-                snake.SetDirection(Direction.Left, true);
-            }
 
             lastKeyboardState = keyboardState;
             base.Update(gameTime);
@@ -100,11 +126,23 @@ namespace SnakeGame
 
             spriteBatch.Begin();
 
-            spriteBatch.DrawString(MainFont, $"Score: {score}", new Vector2(50, 50), Color.Black);
+            if (currentState == GameState.GameOver)
+            {
+                spriteBatch.DrawString(MainFont, $"you scored {snake.Score}!", new Vector2(screenWidth / 2 - MainFont.MeasureString($"you scored {snake.Score}!").X / 2, 50), Color.Red);
+                spriteBatch.DrawString(MainFont, "press space to start over", new Vector2(screenWidth / 2 - MainFont.MeasureString("press space to start over").X / 2, screenHeight - 50 - MainFont.MeasureString("press space to start over").Y), Color.Red);
+            }
+            else
+            {
+                spriteBatch.DrawString(MainFont, $"score: {snake.Score}", new Vector2(50, 50), Color.Black);
 
+                if (currentState == GameState.Paused)
+                {
+                    spriteBatch.DrawString(MainFont, "press space to play", new Vector2(screenWidth / 2 - MainFont.MeasureString("press space to play").X / 2, screenHeight - 50 - MainFont.MeasureString("press space to play").Y), Color.Red);
+                }
+            }
 
             snake.Draw(spriteBatch);
-            food.Draw(spriteBatch);
+
 
             spriteBatch.End();
 

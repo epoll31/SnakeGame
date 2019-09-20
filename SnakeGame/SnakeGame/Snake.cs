@@ -35,7 +35,6 @@ namespace SnakeGame
         }
     }
 
-
     public class Snake
     {
         private Direction CurrentDirection;
@@ -49,34 +48,50 @@ namespace SnakeGame
 
         private int _millisecondsBetweenUpdate;
         private int _minimumMillisecondsBetweenUpdate;
+        private int _numberOfBlocksWide;
+        private int _numberOfBlocksHigh;
         private double _elapsedMilliseconds;
 
         public SnakePart Head => SnakeParts.First();
         public SnakePart Tail => SnakeParts.Last();
 
+        public int Score { get; private set; }
+
+        private Direction _defaultDirection;
+        private Vector2 _defaultPosition;
+
         private Queue<Direction> NextDirections;
         private int _partsToAdd;
 
-        public Snake(Texture2D snakePartImage, Vector2 startPosition, int millisecondsBetweenUpdate)
-            : this(snakePartImage, startPosition, millisecondsBetweenUpdate, 100, Direction.Right, Color.White, 0)
+        private Food food;
+
+        public Snake(Texture2D snakePartImage, Vector2 startPosition, int millisecondsBetweenUpdate, int numberOfBlocksWide, int numberOfBlocksHigh)
+            : this(snakePartImage, startPosition, millisecondsBetweenUpdate, 100, Direction.Right, Color.White, 0, numberOfBlocksWide, numberOfBlocksHigh)
         {
 
         }
 
-        public Snake(Texture2D snakePartImage, Vector2 startPosition, int millisecondsBetweenUpdate, int minUpdateTime, Direction currentDirection, Color color, int padding)
+        public Snake(Texture2D snakePartImage, Vector2 startPosition, int millisecondsBetweenUpdate, int minUpdateTime, Direction currentDirection, Color color, int padding, int numberOfBlocksWide, int numberOfBlocksHigh)
         {
             _snakePartImage = snakePartImage;
             _color = color;
             _padding = padding;
             _millisecondsBetweenUpdate = millisecondsBetweenUpdate;
             _minimumMillisecondsBetweenUpdate = minUpdateTime;
+            _numberOfBlocksWide = numberOfBlocksWide;
+            _numberOfBlocksHigh = numberOfBlocksHigh;
+
+            _defaultDirection = currentDirection;
+            _defaultPosition = startPosition;
 
             CurrentDirection = currentDirection;
             NextDirections = new Queue<Direction>();
             SetDirection(CurrentDirection);
 
             SnakeParts = new LinkedList<SnakePart>();
-            SnakeParts.AddLast(new SnakePart(_snakePartImage, startPosition, _color));
+            SnakeParts.AddLast(new SnakePart(_snakePartImage, _defaultPosition, _color));
+
+            food = new Food(_snakePartImage, Color.Red, _numberOfBlocksWide, _numberOfBlocksHigh, padding);
         }
 
         public void SetDirection(Direction newDirection, bool shouldSkipToUpdate = false)
@@ -91,9 +106,19 @@ namespace SnakeGame
             }
         }
 
+        internal void Reset()
+        {
+            CurrentDirection = _defaultDirection;
+            _partsToAdd = 0;
+            Score = 0;
+            SnakeParts.Clear();
+            SnakeParts.AddLast(new SnakePart(_snakePartImage, _defaultPosition, _color));
+            food.SetRandomPosition();
+        }
+
         public void ChangeSpeed(int deltaMilliseconds)
         {
-            if(_millisecondsBetweenUpdate + deltaMilliseconds > _minimumMillisecondsBetweenUpdate)
+            if (_millisecondsBetweenUpdate + deltaMilliseconds > _minimumMillisecondsBetweenUpdate)
             {
                 _millisecondsBetweenUpdate += deltaMilliseconds;
             }
@@ -104,12 +129,12 @@ namespace SnakeGame
             _partsToAdd += numberOfParts;
         }
 
-        public void Update(GameTime gameTime)
+        public bool Update(GameTime gameTime)
         {
             _elapsedMilliseconds += gameTime.ElapsedGameTime.TotalMilliseconds;
             if (_elapsedMilliseconds < _millisecondsBetweenUpdate)
             {
-                return;
+                return true;
             }
             _elapsedMilliseconds = 0;
 
@@ -128,6 +153,20 @@ namespace SnakeGame
             }
 
             MoveLast();
+
+            if (Head.Intersects(food))
+            {
+                Score += 25;
+                ChangeSpeed(-5);
+                food.SetRandomPosition();
+                AddParts(3);
+            }
+
+            if (HasCollidedWithSelf() || HasCollidedWithWall())
+            {
+                return false;
+            }
+            return true;
         }
 
         private void AddPiece()
@@ -169,7 +208,7 @@ namespace SnakeGame
             SnakeParts.AddFirst(newHead);
         }
 
-        public bool HasCollidedWithSelf()
+        private bool HasCollidedWithSelf()
         {
             foreach (SnakePart part in SnakeParts)
             {
@@ -180,11 +219,15 @@ namespace SnakeGame
 
                 if (part.Intersects(Head))
                 {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
+
+        private bool HasCollidedWithWall() 
+            => (SnakeParts.First.Value.Position.X < 0 || SnakeParts.First.Value.Position.X > _numberOfBlocksWide * (_snakePartImage.Width + _padding) ||
+                SnakeParts.First.Value.Position.Y < 0 || SnakeParts.First.Value.Position.Y > _numberOfBlocksHigh * (_snakePartImage.Height + _padding));
 
         public void Draw(SpriteBatch spriteBatch)
         {
@@ -192,6 +235,8 @@ namespace SnakeGame
             {
                 part.Draw(spriteBatch);
             }
+
+            food.Draw(spriteBatch);
         }
     }
 }
